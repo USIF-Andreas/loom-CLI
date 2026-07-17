@@ -1,0 +1,92 @@
+Metadata-Version: 2.4
+Name: loom
+Version: 0.1.0
+Summary: A terminal-based agentic coding assistant
+Requires-Python: >=3.11
+Description-Content-Type: text/markdown
+Requires-Dist: langgraph>=0.2.0
+Requires-Dist: langchain-anthropic>=0.2.0
+Requires-Dist: langchain-openai>=0.2.0
+Requires-Dist: langchain-core>=0.3.0
+Requires-Dist: typer>=0.12.0
+Requires-Dist: rich>=13.0.0
+Requires-Dist: anthropic>=0.40.0
+Requires-Dist: prompt-toolkit>=3.0.0
+Provides-Extra: dev
+Requires-Dist: pytest>=8.0.0; extra == "dev"
+
+# loom
+
+A terminal-based agentic coding assistant. Give it a natural-language task,
+and it reads/edits files, runs shell commands, and searches your project —
+iterating until the job is done.
+
+## Install (dev)
+
+```bash
+pip install -e ".[dev]"
+```
+
+Requires Python 3.11+.
+
+## Setup
+
+Set your Anthropic API key:
+
+```bash
+export ANTHROPIC_API_KEY=sk-...
+```
+
+Or add `api_key` to `~/.loom/config.toml`:
+
+```toml
+api_key = "sk-..."
+model = "claude-sonnet-4-6"
+permission_mode = "confirm"   # confirm | yolo | deny
+```
+
+## Usage
+
+```bash
+loom "read main.py and tell me what it does"
+loom --yolo "refactor utils.py to use pathlib"
+loom --resume <session_id> "continue where we left off"
+loom sessions          # list past sessions
+```
+
+### Options
+
+- `--yolo` — skip permission prompts (still blocked by the safety denylist)
+- `--resume <id>` — reload a previous session's history
+- `--model <name>` — override the model
+- `--no-stream` — disable live streaming
+
+## Tools the agent can use
+
+- `read_file`, `write_file`, `edit_file` — file operations
+- `bash` — run shell commands (with timeout)
+- `glob`, `grep` — search the project
+
+## Safety
+
+Before any write or shell action, `loom` prompts for confirmation (unless
+`--yolo`). A hard denylist blocks obviously destructive commands (e.g.
+`rm -rf /`, fork bombs) regardless of mode.
+
+## Architecture
+
+```
+loom/
+  cli.py          typer entry point
+  agent/          LangGraph loop, prompts, state
+  tools/          file / shell / search tools + executor
+  session/        SQLite persistence + project tree
+  ui/             rich rendering + permission prompts
+  config.py       config loading
+```
+
+## Tests
+
+```bash
+pytest
+```

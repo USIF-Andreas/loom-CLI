@@ -1,0 +1,42 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual environments
+venv/
+.venv/
+env/
+
+# Environment variables / secrets
+.env
+.env.*
+*.env
+*.env.*
+
+# loom local config that may hold API keys
+.loom/
+.loom/.env
+.loom/config.toml
+
+# Generic secret files (API keys, tokens, credentials)
+*.key
+*.pem
+*.token
+secrets.toml
+credentials.toml
+*_secret*
+*apikey*
+*api_key*
+
+# Caches
+.cache/
+
+# Test / coverage artifacts
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Editor
+.idea/
+.vscode/
