@@ -1,10 +1,15 @@
 # 🧵 loom - Terminal Agentic Coding Assistant
 
+![version](https://img.shields.io/badge/version-0.1.0-blue)
+![python](https://img.shields.io/badge/python-3.11%2B-blue)
+![license](https://img.shields.io/badge/license-MIT-green)
+![tests](https://img.shields.io/badge/tests-35%20passing-brightgreen)
+
 > 🚀 **loom** is a terminal-based agentic coding CLI. Give it a natural-language
 > task and it reads/edits files, runs shell commands, searches your project,
 > and - via OpenRouter - can even search the web, iterating until the job is done.
 
-```
+```ansi
 [1;96m██╗      ██████╗  ██████╗ ███╗   ███╗[0m
 [1;94m██║     ██╔═══██╗██╔═══██╗████╗ ████║[0m
 [1;95m██║     ██║   ██║██║   ██║██╔████╔██║[0m
@@ -13,6 +18,20 @@
 [1;92m╚══════╝ ╚═════╝  ╚═════╝ ╚═╝     ╚═╝[0m
 [1;91m ✦ a terminal agentic coding assistant[0m
 ```
+
+---
+
+## ✨ Features
+
+- 🌈 **Colorful UI** - rainbow-gradient ASCII banner + animated braille spinner.
+- 🌐 **Multi-provider** - Anthropic, OpenRouter, NVIDIA, Groq, switchable live in chat.
+- 🧠 **Live model picker** - browse 300+ models with context sizes; filter by vendor.
+- 🔧 **Tool-use agent** - reads/writes/edits files, runs shell, globs, greps.
+- 🌍 **Web tools** - `web_search` + `fetch_url` for research-augmented coding.
+- 👀 **`/serve`** - preview static sites over HTTP, opened in your browser.
+- 💬 **Modern REPL** - colored prompt, `/` autocomplete, bottom toolbar.
+- 🛡 **Safe by default** - confirmation prompts + a hard destructive-command denylist.
+- 💾 **Session history** - local SQLite persistence with `--resume`.
 
 ---
 
@@ -55,9 +74,10 @@ permission_mode = "confirm"       # confirm | yolo | deny
 ## 🎨 The colorful banner & animation
 
 On startup `loom chat` prints the **rainbow-gradient LOOM banner** (shown
-above). Before each agent turn a small **braille spinner** (`⠋ thinking…`)
-animates to show the agent is working. Both gracefully fall back to plain text
-when output isn't a color terminal (piped logs, CI).
+above) using a GitHub-compatible ```` ```ansi ```` block. Before each agent turn
+a small **braille spinner** (`⠋ thinking…`) animates to show the agent is
+working. Both gracefully fall back to plain text when output isn't a color
+terminal (piped logs, CI).
 
 ---
 
@@ -133,15 +153,24 @@ tools prompt for confirmation `[y/N/always]` unless `--yolo`.
 
 Defined in `pyproject.toml` (Python >= 3.11):
 
-**Runtime:**
-- `langgraph`, `langchain-core`, `langchain-anthropic`, `langchain-openai` - agent loop + model clients
-- `typer` - CLI
-- `rich` - terminal rendering
-- `anthropic` - Anthropic SDK
-- `prompt-toolkit` - interactive input box
+**Runtime libraries:**
 
-**Dev:**
-- `pytest` - tests
+| 📚 Library | 🏷 Version | 📝 Role |
+|-----------|-----------|---------|
+| `langgraph` | >=0.2.0 | 🕸 agent loop / graph orchestration |
+| `langchain-core` | >=0.3.0 | 🧩 model + message abstractions |
+| `langchain-anthropic` | >=0.2.0 | 🤖 Anthropic (Claude) client |
+| `langchain-openai` | >=0.2.0 | 🔑 OpenAI-compatible client (Groq/NVIDIA/OpenRouter) |
+| `typer` | >=0.12.0 | ⌨️ CLI framework |
+| `rich` | >=13.0.0 | 🎨 terminal rendering |
+| `anthropic` | >=0.40.0 | 🧠 Anthropic SDK |
+| `prompt-toolkit` | >=3.0.0 | 💬 interactive input box |
+
+**Dev libraries:**
+
+| 📚 Library | 🏷 Version | 📝 Role |
+|-----------|-----------|---------|
+| `pytest` | >=8.0.0 | 🧪 tests |
 
 Install everything (incl. dev): `pip install -e ".[dev]"`. The `loom` console
 script is registered automatically via `[project.scripts]`.
@@ -203,9 +232,8 @@ loom/
 - 🔐 **Rotate your keys.** API keys were pasted into chat history during
   development - treat them as exposed and regenerate them in your provider
   dashboards.
-- 🎨 **Colors need a truecolor terminal.** The banner/spinner render in color
-  only in a truecolor TTY; GitHub's Markdown view strips ANSI, so the logo
-  looks plain there (use `cat README.md` locally to see it colored).
+- 🎨 **Colors render on GitHub.** The banner uses a ```` ```ansi ```` block, so
+  it shows in color on GitHub and in any truecolor terminal (`cat README.md`).
 - 🚫 **Denylist always wins.** Even in `--yolo`, destructive commands are blocked.
 - 💾 **Sessions are local.** Chat history is stored in a local SQLite DB
   (`~/.loom/...`); nothing is sent anywhere except to your chosen LLM provider.
