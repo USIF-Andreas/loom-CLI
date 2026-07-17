@@ -9,15 +9,21 @@
 > task and it reads/edits files, runs shell commands, searches your project,
 > and - via OpenRouter - can even search the web, iterating until the job is done.
 
-```ansi
-[1;96m██╗      ██████╗  ██████╗ ███╗   ███╗[0m
-[1;94m██║     ██╔═══██╗██╔═══██╗████╗ ████║[0m
-[1;95m██║     ██║   ██║██║   ██║██╔████╔██║[0m
-[1;95m██║     ██║   ██║██║   ██║██║╚██╔╝██║[0m
-[1;93m███████╗╚██████╔╝╚██████╔╝██║ ╚═╝ ██║[0m
-[1;92m╚══════╝ ╚═════╝  ╚═════╝ ╚═╝     ╚═╝[0m
-[1;91m ✦ a terminal agentic coding assistant[0m
+---
+
+## 🎨 Banner
+
+<div align="center">
+
+```text
+██╗     ██████╗  ██████╗ ███╗   ███╗
+██║     ██╔═══██╗██╔═══██╗████╗ ████║
+██║     ██║   ██║██║   ██║██╔████╔██║
+██║     ██║   ██║██║   ██║██║╚██╔╝██║
+███████╗╚██████╔╝╚██████╔╝██║ ╚═╝ ██║
+╚══════╝ ╚═════╝  ╚═════╝ ╚═╝     ╚═╝
 ```
+</div>
 
 ---
 
@@ -32,8 +38,6 @@
 - 💬 **Modern REPL** - colored prompt, `/` autocomplete, bottom toolbar.
 - 🛡 **Safe by default** - confirmation prompts + a hard destructive-command denylist.
 - 💾 **Session history** - local SQLite persistence with `--resume`.
-
----
 
 ## 📦 Install (dev)
 
@@ -68,16 +72,6 @@ permission_mode = "confirm"       # confirm | yolo | deny
 > 💡 Keys are resolved in this order: env var > project `.env` > `~/.loom/.env` >
 > `config.toml`. Paste a key directly in chat and it's kept for the session
 > (or saved to `.env` with `y`).
-
----
-
-## 🎨 The colorful banner & animation
-
-On startup `loom chat` prints the **rainbow-gradient LOOM banner** (shown
-above) using a GitHub-compatible ```` ```ansi ```` block. Before each agent turn
-a small **braille spinner** (`⠋ thinking…`) animates to show the agent is
-working. Both gracefully fall back to plain text when output isn't a color
-terminal (piped logs, CI).
 
 ---
 
