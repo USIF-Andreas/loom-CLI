@@ -39,15 +39,15 @@ ok "Found $PYTHON $VER"
 
 # --- pip / pipx ---
 install_loom() {
-    # Prefer pipx for isolated install
+    PIP_SPEC="git+https://github.com/$REPO.git"
+
     if command -v pipx &>/dev/null; then
         info "Installing via pipx..."
-        if ! pipx install "git+https://github.com/$REPO.git"; then
-            warn "pipx failed — falling back to pip..."
-        else
+        if pipx install --force "$PIP_SPEC"; then
             ok "loom installed via pipx"
             return
         fi
+        warn "pipx failed — falling back to pip..."
     fi
 
     if ! command -v pip &>/dev/null && ! "$PYTHON" -m pip &>/dev/null; then
@@ -57,11 +57,10 @@ install_loom() {
 
     PIP=("$PYTHON" -m pip)
     info "Installing via pip..."
-    if ! "${PIP[@]}" install --user "git+https://github.com/$REPO.git"; then
-        die "Installation failed. Try: pip install git+https://github.com/$REPO.git"
+    if ! "${PIP[@]}" install --user --force-reinstall "$PIP_SPEC"; then
+        die "Installation failed. Try: ${PIP[*]} install $PIP_SPEC"
     fi
 
-    # Warn if ~/.local/bin not on PATH
     if ! echo "$PATH" | grep -q "$HOME/.local/bin"; then
         warn "Add ~/.local/bin to your PATH:"
         warn "  export PATH=\"\$HOME/.local/bin:\$PATH\""
@@ -89,7 +88,8 @@ setup_key() {
         return
     fi
     printf "\n  %s API key (or press Enter to skip): " "$prompt" >&2
-    read -r key </dev/tty || true
+    key=""
+    read -r key </dev/tty 2>/dev/null || read -r key || true
     if [ -n "$key" ]; then
         printf "%s=%s\n" "$var" "$key" >> "$LOOM_INSTALL_DIR/env"
         ok "$provider API key saved to $LOOM_INSTALL_DIR/env"
