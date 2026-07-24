@@ -91,12 +91,12 @@ setup_key() {
     key=""
     read -r key </dev/tty 2>/dev/null || read -r key || true
     if [ -n "$key" ]; then
-        printf "%s=%s\n" "$var" "$key" >> "$LOOM_INSTALL_DIR/env"
-        ok "$provider API key saved to $LOOM_INSTALL_DIR/env"
+        printf "%s=%s\n" "$var" "$key" >> "$LOOM_INSTALL_DIR/.env"
+        ok "$provider API key saved to $LOOM_INSTALL_DIR/.env"
     fi
 }
 
-touch "$LOOM_INSTALL_DIR/env"
+touch "$LOOM_INSTALL_DIR/.env"
 setup_key "Anthropic"  "ANTHROPIC_API_KEY"  "Anthropic"
 setup_key "OpenRouter" "OPENROUTER_API_KEY" "OpenRouter"
 setup_key "Groq"       "GROQ_API_KEY"       "Groq"

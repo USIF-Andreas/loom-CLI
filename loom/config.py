@@ -28,6 +28,7 @@ CONFIG_PATH = CONFIG_DIR / "config.toml"
 ENV_PATHS = [
     Path.cwd() / ".env",
     CONFIG_DIR / ".env",
+    CONFIG_DIR / "env",
 ]
 
 # Default base URLs and environment-variable names per provider.
