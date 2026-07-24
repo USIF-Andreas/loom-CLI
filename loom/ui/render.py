@@ -69,6 +69,9 @@ def render_diff(diff_text: str) -> None:
 def render_error(msg: str) -> None:
     console.print(Text(f"  ✗ {msg}", style="color(203)"))
 
+def render_warning(msg: str) -> None:
+    console.print(Text(f"  ! {msg}", style="color(215)"))
+
 
 # ── Tool call & result rendering ────────────────────────────────────────────
 

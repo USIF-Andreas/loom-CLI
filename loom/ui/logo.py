@@ -71,3 +71,17 @@ def animate_thinking(label: str = "thinking", frames: str | None = None,
         )
     except KeyboardInterrupt:
         console.print()
+
+
+def animate_status(text: str) -> None:
+    """Animate the provider/model status line with a color sweep."""
+    if not console.is_terminal:
+        console.print(Text(f"  {text}", style="dim"))
+        return
+
+    colors = ["#7c3aed", "#a78bfa", "#22d3ee", "#67e8f9", "#a78bfa", "#7c3aed"]
+    for i in range(8):
+        c = colors[i % len(colors)]
+        console.print(Text(f"\r  {text}", style=c), end="")
+        time.sleep(0.04)
+    console.print(Text(f"\r  {text}", style="dim"))

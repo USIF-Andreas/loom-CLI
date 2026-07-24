@@ -341,6 +341,45 @@ def architect_ui(
     _architect_terminal(config)
 
 
+def _pick_provider_interactive() -> Config | None:
+    """Let the user pick a provider that has an API key configured."""
+    from .config import PROVIDERS, load_env_keys
+    from .ui.input_box import read_input
+    import os
+
+    env_keys = load_env_keys()
+    available = []
+    for name, pinfo in PROVIDERS.items():
+        key = os.environ.get(pinfo["key_env"]) or env_keys.get(pinfo["key_env"])
+        if key:
+            available.append(name)
+
+    if not available:
+        render.render_error("No API keys found for any provider.")
+        render.render_text("system", "Set a key, e.g.:")
+        render.render_text("system", "  export GROQ_API_KEY=gsk_...")
+        render.render_text("system", "Then run loom chat again.")
+        return None
+
+    if len(available) == 1:
+        name = available[0]
+    else:
+        render.render_role("system", "Pick a provider:")
+        for i, name in enumerate(available, 1):
+            render.render_text("system", f"  {i}. {name}")
+        try:
+            idx = int(read_input("> ")) - 1
+            name = available[idx]
+        except (ValueError, IndexError, EOFError):
+            render.render_error("Invalid choice.")
+            return None
+
+    pinfo = PROVIDERS[name]
+    env_keys = load_env_keys()
+    api_key = os.environ.get(pinfo["key_env"]) or env_keys.get(pinfo["key_env"], "")
+    return Config(provider=name, api_key=api_key, base_url=pinfo.get("base_url", ""))
+
+
 def _cmd_sessions() -> None:
     """List past sessions."""
     db.init_db()
@@ -380,9 +419,11 @@ def chat(
 
     try:
         config = _build_config(provider, model)
-    except RuntimeError as exc:
-        render.render_error(str(exc))
-        raise typer.Exit(code=1)
+    except RuntimeError:
+        render.render_warning("No API key found for default provider. Launching provider picker...")
+        config = _pick_provider_interactive()
+        if config is None:
+            raise typer.Exit(code=1)
 
     # Cached config.toml data so provider switching can reuse saved keys.
     _cfg_data = _load_cfg_data()
@@ -407,15 +448,12 @@ def chat(
         else:
             render.render_text("system", text)
 
-    from .ui.logo import render_logo
+    from .ui.logo import render_logo, animate_status
     from .ui import commands as slash
     from .ui.input_box import read_input
 
     render_logo()
-    render.render_text("system",
-        f"  {config.provider}  ·  {config.model}  "
-        f"·  type / for commands"
-    )
+    animate_status(f"{config.provider}  ·  {config.model}  ·  type / for commands")
 
     # Selection state: when set, the next line picks from this list.
     pending_menu: dict = {}
