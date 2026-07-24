@@ -37,9 +37,9 @@ dev = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/anomalyco/loom-CLI"
-Source = "https://github.com/anomalyco/loom-CLI"
-BugTracker = "https://github.com/anomalyco/loom-CLI/issues"
+Homepage = "https://github.com/USIF-Andreas/loom-CLI"
+Source = "https://github.com/USIF-Andreas/loom-CLI"
+BugTracker = "https://github.com/USIF-Andreas/loom-CLI/issues"
 
 [project.scripts]
 loom = "loom.cli:app"
