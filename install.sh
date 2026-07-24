@@ -3,7 +3,7 @@ set -euo pipefail
 
 LOOM_VERSION="${LOOM_VERSION:-latest}"
 LOOM_INSTALL_DIR="${LOOM_INSTALL_DIR:-$HOME/.loom}"
-REPO="anomalyco/loom-CLI"
+REPO="USIF-Andreas/loom-CLI"
 
 HEADER=$(cat <<'GOAT'
       ▐   ▐
@@ -42,9 +42,12 @@ install_loom() {
     # Prefer pipx for isolated install
     if command -v pipx &>/dev/null; then
         info "Installing via pipx..."
-        pipx install "git+https://github.com/$REPO.git" 2>&1 | tail -1
-        ok "loom installed via pipx"
-        return
+        if ! pipx install "git+https://github.com/$REPO.git"; then
+            warn "pipx failed — falling back to pip..."
+        else
+            ok "loom installed via pipx"
+            return
+        fi
     fi
 
     if ! command -v pip &>/dev/null && ! "$PYTHON" -m pip &>/dev/null; then
@@ -54,7 +57,9 @@ install_loom() {
 
     PIP=("$PYTHON" -m pip)
     info "Installing via pip..."
-    "${PIP[@]}" install --user "git+https://github.com/$REPO.git" 2>&1 | tail -1
+    if ! "${PIP[@]}" install --user "git+https://github.com/$REPO.git"; then
+        die "Installation failed. Try: pip install git+https://github.com/$REPO.git"
+    fi
 
     # Warn if ~/.local/bin not on PATH
     if ! echo "$PATH" | grep -q "$HOME/.local/bin"; then
@@ -69,7 +74,7 @@ install_loom
 
 # --- Verify ---
 if ! command -v loom &>/dev/null; then
-    die "loom command not found after install. Check PATH or open an issue at https://github.com/$REPO/issues"
+    die "loom command not found after install. Check PATH or open an issue at https://github.com/USIF-Andreas/loom-CLI/issues"
 fi
 ok "loom $(loom --version 2>/dev/null || echo 'installed')"
 
