@@ -134,8 +134,75 @@ function copyCmd(el) {
 
 document.addEventListener('DOMContentLoaded', function() {
   runGhostAnimation();
+  typeTitle();
+  blinkLOOM();
   initGame();
 });
+
+function blinkLOOM() {
+  var el = document.querySelector('.loom-ascii');
+  if (!el) return;
+  var spans = el.querySelectorAll('span');
+  var open = [];
+  for (var i = 0; i < spans.length; i++) open.push(spans[i].textContent);
+  function makeClosed(t, i) {
+    if (i === 2 || i === 3) return t.replace(/\u2551   \u2588\u2588\u2551/g, '\u2551\u2500\u2500\u2500\u2588\u2588\u2551');
+    return t;
+  }
+  var isOpen = true;
+  function tick() {
+    isOpen = !isOpen;
+    var texts = isOpen ? open : open.map(makeClosed);
+    for (var i = 0; i < spans.length; i++) spans[i].textContent = texts[i];
+    setTimeout(tick, isOpen ? 3000 : 200);
+  }
+  setTimeout(tick, 2000);
+}
+
+function typeTitle() {
+  var el = document.getElementById('heroTitle');
+  if (!el) return;
+
+  var phrases = [
+    'Agentic coding',
+    'Talk to code',
+    'Ship faster',
+    'AI-native dev',
+    'Multi-agent',
+    'Your terminal',
+  ];
+
+  var pi = 0;
+  var i = 0;
+  var deleting = false;
+  el.textContent = '';
+  el.style.visibility = 'visible';
+
+  function tick() {
+    var text = phrases[pi];
+    if (!deleting) {
+      if (i < text.length) {
+        i++;
+        el.textContent = text.slice(0, i);
+        setTimeout(tick, 35 + Math.random() * 45);
+      } else {
+        deleting = true;
+        setTimeout(tick, 2500);
+      }
+    } else {
+      if (i > 0) {
+        i--;
+        el.textContent = text.slice(0, i);
+        setTimeout(tick, 20 + Math.random() * 25);
+      } else {
+        deleting = false;
+        pi = (pi + 1) % phrases.length;
+        setTimeout(tick, 300);
+      }
+    }
+  }
+  setTimeout(tick, 600);
+}
 
 // --- Ghost Hunter Game ---
 function initGame() {
@@ -291,15 +358,10 @@ function initGame() {
     if (!game || !game.running || game.gameOver) return;
     var g = game.ghost;
     var spd = g.speed * canvas.width/640;
-    // Touch input
+    // Touch input — ghost follows finger directly
     if (game.touchTarget) {
-      var dx = game.touchTarget.x - g.x;
-      var dy = game.touchTarget.y - g.y;
-      var dist = Math.sqrt(dx*dx+dy*dy);
-      if (dist > 5) {
-        g.x += (dx/dist) * spd * 1.8;
-        g.y += (dy/dist) * spd * 1.8;
-      }
+      g.x += (game.touchTarget.x - g.x) * 0.25;
+      g.y += (game.touchTarget.y - g.y) * 0.25;
     }
     // Keyboard input
     if (game.keys['ArrowLeft']||game.keys['KeyA']||game.keys['a']) g.x -= spd;
@@ -315,7 +377,7 @@ function initGame() {
     // Shoot
     if (shootCooldown > 0) shootCooldown--;
     if (game.keys['Space']) shoot();
-    if (game.touchTarget && game.frame % 12 === 0) shoot();
+    if (game.touchTarget && game.frame % 8 === 0) shoot();
 
     // Blink every ~3s
     if (game.blinkTimer > 0) game.blinkTimer--;
@@ -443,7 +505,7 @@ function initGame() {
     if (!game) return;
     e.preventDefault();
     game.touchTarget = getTouchPos(e);
-    if (!game.running && !game.gameOver) reset();
+    if (!game.running) reset();
   }, { passive: false });
   canvas.addEventListener('touchmove', function(e) {
     if (!game || !game.running) return;

@@ -152,6 +152,7 @@ body::before {
   font-size: clamp(2rem, 6vw, 3.5rem);
   font-weight: 600;
   margin: 1rem 0 .5rem;
+  min-height: 1.4em;
   background: linear-gradient(135deg, var(--primary2), var(--accent));
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
@@ -266,23 +267,35 @@ body::before {
   align-items: center;
   padding: .5rem 1rem;
   border-radius: 20px;
-  border: 1px solid color-mix(in srgb, var(--c) 25%, transparent);
-  background: color-mix(in srgb, var(--c) 6%, transparent);
+  border: 1px solid color-mix(in srgb, var(--c) 50%, transparent);
+  background: color-mix(in srgb, var(--c) 35%, transparent);
   transition: all .3s;
   cursor: default;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 0 25px color-mix(in srgb, var(--c) 25%, transparent);
+}
+
+.provider-card::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, transparent 15%, rgba(255,255,255,0.15) 50%, transparent 85%);
+  opacity: 1;
+  pointer-events: none;
 }
 
 .provider-card:hover {
-  background: color-mix(in srgb, var(--c) 14%, transparent);
-  border-color: color-mix(in srgb, var(--c) 50%, transparent);
-  transform: translateY(-3px);
-  box-shadow: 0 6px 20px color-mix(in srgb, var(--c) 15%, transparent);
+  background: color-mix(in srgb, var(--c) 55%, transparent);
+  border-color: color-mix(in srgb, var(--c) 85%, transparent);
+  transform: translateY(-3px) scale(1.05);
+  box-shadow: 0 0 50px color-mix(in srgb, var(--c) 55%, transparent), 0 0 100px color-mix(in srgb, var(--c) 30%, transparent);
 }
 
 .prov-name {
   font-family: var(--mono);
-  font-size: .65rem;
-  color: var(--text2);
+  font-size: .7rem;
+  color: color-mix(in srgb, var(--c) 85%, #fff);
   text-transform: uppercase;
   letter-spacing: .05em;
 }
@@ -355,6 +368,7 @@ body::before {
 .terminal-demo .output .prompt { color: var(--accent); }
 .terminal-demo .output .info { color: var(--text2); }
 .terminal-demo .output .ok { color: #22c55e; }
+.terminal-demo .output .error { color: #ef4444; }
 .terminal-demo .output .highlight { color: var(--primary2); }
 .terminal-demo .output .dim { color: var(--text2); }
 
@@ -586,6 +600,7 @@ footer a:hover { color: var(--primary2); }
   aspect-ratio: 600 / 400;
   background: #050510;
   cursor: none;
+  touch-action: none;
 }
 
 @media (max-width: 640px) {
