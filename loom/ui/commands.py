@@ -504,6 +504,7 @@ def _register(name, description, handler):
 
 _register("commands", "list all available commands", _cmd_commands)
 _register("clear", "clear the conversation history", _cmd_clear)
+_register("m", "list models for the current provider", _cmd_models)
 _register("models", "list models for the current provider", _cmd_models)
 _register("provider", "switch provider (groq/openrouter/nvidia/anthropic)", _cmd_provider)
 _register("sessions", "list / resume a past session", _cmd_sessions)
