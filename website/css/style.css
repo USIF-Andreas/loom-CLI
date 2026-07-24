@@ -49,6 +49,8 @@ body::before {
   text-shadow: 0 0 20px var(--glow), 0 0 40px var(--glow);
   white-space: pre;
   display: inline-block;
+  width: 13ch;
+  text-align: center;
   animation: ghostFloat 3s ease-in-out infinite, ghostFlicker 5s ease-in-out infinite;
 }
 
