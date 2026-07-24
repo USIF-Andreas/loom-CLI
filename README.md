@@ -18,7 +18,7 @@
 </p>
 
 <p align="center">
-  <a href="https://USIF-Andreas.github.io/loom-CLI"><img src="https://img.shields.io/badge/website-live-7c3aed?style=flat-square&logo=githubpages&logoColor=white" alt="Website"></a>
+  <a href="https://usif-andreas.github.io/loom-CLI/"><img src="https://img.shields.io/badge/website-live-7c3aed?style=flat-square&logo=githubpages&logoColor=white" alt="Website"></a>
   <a href="#install"><img src="https://img.shields.io/badge/python-3.11%2B-22d3ee?style=flat-square&logo=python&logoColor=white" alt="Python"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-a78bfa?style=flat-square" alt="License"></a>
   <a href="https://github.com/USIF-Andreas/loom-CLI/actions"><img src="https://img.shields.io/github/actions/workflow/status/USIF-Andreas/loom-CLI/pages.yml?style=flat-square&label=deploy&color=c084fc" alt="Deploy"></a>
@@ -175,12 +175,12 @@ install.sh              # Curl-installable script
 
 ## Links
 
-- [Website](https://USIF-Andreas.github.io/loom-CLI) — live demo with ghost game
+- [Website](https://usif-andreas.github.io/loom-CLI/) — live demo with ghost game
 - [Install](https://raw.githubusercontent.com/USIF-Andreas/loom-CLI/main/install.sh) — one-liner install script
 - [GitHub](https://github.com/USIF-Andreas/loom-CLI) — source code
 
 ---
 
 <p align="center">
-  <sub>Built with ❤️ and Python · MIT License</sub>
+  <sub>MIT License</sub>
 </p>
