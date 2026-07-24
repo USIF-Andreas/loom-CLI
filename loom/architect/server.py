@@ -94,7 +94,7 @@ def _interactive_select(items: list[str]) -> str | None:
         if filtered and selected >= len(filtered):
             selected = max(0, len(filtered) - 1)
 
-        sys.stdout.write("\033[H\033[J")  # home + clear screen
+        sys.stdout.write("\033[3J\033[H\033[J")  # clear scrollback + home + clear screen
         for i, item in enumerate(filtered):
             vendor = item.split("/", 1)[0] if "/" in item else ""
             c = COLORS.get(vendor, "7")

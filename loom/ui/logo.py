@@ -79,9 +79,11 @@ def animate_status(text: str) -> None:
         console.print(Text(f"  {text}", style="dim"))
         return
 
-    colors = ["#7c3aed", "#a78bfa", "#22d3ee", "#67e8f9", "#a78bfa", "#7c3aed"]
+    colors = [(124,58,237), (167,139,250), (34,211,238), (103,232,249), (167,139,250), (124,58,237)]
     for i in range(8):
-        c = colors[i % len(colors)]
-        console.print(Text(f"\r  {text}", style=c), end="")
+        r, g, b = colors[i % len(colors)]
+        sys.stdout.write(f"\r\033[38;2;{r};{g};{b}m  {text}\033[0m")
+        sys.stdout.flush()
         time.sleep(0.04)
-    console.print(Text(f"\r  {text}", style="dim"))
+    sys.stdout.write(f"\r\033[0m  {text}\033[0m\n")
+    sys.stdout.flush()
