@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LOOM CLI — Agentic coding in your terminal</title>
+<link rel="stylesheet" href="css/style.css">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+</head>
+<body>
+
+<div class="container">
+
+  <!-- Hero -->
+  <section class="hero">
+    <div class="hero-grid">
+      <div class="hero-left">
+        <div style="display:flex;align-items:center;gap:1.5rem;flex-wrap:wrap">
+        <div class="ghost" id="ghost">
+          ▐   ▐
+        ▄███████▄
+       ██  ▐ ▐  ██
+       ██       ██
+        ▀███████▀
+         ▄▀   ▀▄
+        </div>
+
+        <div class="loom-ascii">
+          <span class="l">██╗      ██████╗  ██████╗ ███╗   ███╗</span>
+          <span class="o">██║     ██╔═══██╗██╔═══██╗████╗ ████║</span>
+          <span class="m">██║     ██║   ██║██║   ██║██╔████╔██║</span>
+          <span class="o">██║     ██║   ██║██║   ██║██║╚██╔╝██║</span>
+          <span class="l">███████╗╚██████╔╝╚██████╔╝██║ ╚═╝ ██║</span>
+          <span class="m">╚══════╝ ╚═════╝  ╚═════╝ ╚═╝     ╚═╝</span>
+        </div>
+        </div>
+
+        <h1>Agentic coding in your terminal</h1>
+        <p>Talk to your codebase, spawn multi-agent pipelines, and ship faster — all without leaving your shell.</p>
+
+        <div class="install-block">
+          <div class="cmd" onclick="copyCmd(this)">
+            curl -fsSL https://raw.githubusercontent.com/USIF-Andreas/loom-CLI/main/install.sh | bash
+            <span class="copied">copied</span>
+          </div>
+        </div>
+
+        <div class="btns">
+          <a href="#features" class="btn btn-primary">Explore features</a>
+          <a href="https://github.com/USIF-Andreas/loom-CLI" class="btn btn-outline">GitHub</a>
+        </div>
+      </div>
+
+      <div class="hero-right">
+        <div class="terminal-demo">
+          <div class="bar">
+            <span class="dot"></span>
+            <span class="dot"></span>
+            <span class="dot"></span>
+            <span>~/project — loom chat</span>
+          </div>
+          <div class="output">
+<pre class="line" style="margin:0;background:transparent;border:none;padding:0;color:#8888b8">┏━━ LOOM ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+┃  <span style="color:#a78bfa">▐   ▐</span>                                    ┃
+┃ <span style="color:#a78bfa">▄███████▄</span>                                  ┃
+┃ <span style="color:#a78bfa">██  ▐ ▐  ██</span>    <span style="color:#8888b8">groq · llama-3.3-70b</span>         ┃
+┃  <span style="color:#a78bfa">▀███████▀</span>     <span style="color:#8888b8">type / for commands</span>         ┃
+┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛</pre>
+            <div class="line"><br></div>
+            <div class="line"><span class="prompt">$</span> loom "explain the auth flow"</div>
+            <div class="line"><span class="ok">✓</span> <span class="dim">Found auth middleware in src/middleware/auth.js</span></div>
+            <div class="line"><span>The JWT validation chain checks tokens against Redis...</span></div>
+            <div class="line"><span class="prompt">$</span> <span class="cursor"></span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Providers -->
+  <section class="providers">
+    <p class="sub" style="text-align:center;color:var(--text2);margin-bottom:1.5rem">Works with every major LLM provider</p>
+    <div class="provider-logos">
+      <div class="provider-card" style="--c:#f97316">
+        <span class="prov-name">Anthropic</span>
+      </div>
+      <div class="provider-card" style="--c:#22d3ee">
+        <span class="prov-name">OpenRouter</span>
+      </div>
+      <div class="provider-card" style="--c:#76b900">
+        <span class="prov-name">NVIDIA</span>
+      </div>
+      <div class="provider-card" style="--c:#c084fc">
+        <span class="prov-name">Groq</span>
+      </div>
+      <div class="provider-card" style="--c:#6366f1">
+        <span class="prov-name">Vercel</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- Features -->
+  <section class="features" id="features">
+    <h2>Everything in one command</h2>
+    <p class="sub">Your terminal is the only interface you need.</p>
+
+    <div class="features-grid">
+      <div class="feature-card">
+        <div class="icon">&#x1f916;</div>
+        <h3>Multi-LLM</h3>
+        <p>Anthropic, OpenRouter, NVIDIA, Groq — switch providers and models on the fly.</p>
+      </div>
+      <div class="feature-card">
+        <div class="icon">&#x1f3d7;&#xfe0f;</div>
+        <h3>Multi-Agent</h3>
+        <p>Spawn architect, coder, reviewer agents that coordinate to solve complex tasks.</p>
+      </div>
+      <div class="feature-card">
+        <div class="icon">&#x1f4ac;</div>
+        <h3>Interactive Chat</h3>
+        <p>Persistent sessions, slash commands, memory — explore your codebase conversationally.</p>
+      </div>
+      <div class="feature-card">
+        <div class="icon">&#x1f50d;</div>
+        <h3>Workspace Intelligence</h3>
+        <p>Index your project, search symbols, trace imports, and graph dependencies.</p>
+      </div>
+      <div class="feature-card">
+        <div class="icon">&#x1f527;</div>
+        <h3>Developer Toolkit</h3>
+        <p>File ops, shell, git, checkpoints, test runner, benchmark — all via natural language.</p>
+      </div>
+      <div class="feature-card">
+        <div class="icon">&#x1f9f0;</div>
+        <h3>Extensible</h3>
+        <p>Plugins, MCP servers, custom tools — bring your own infrastructure.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Install -->
+  <section class="install-section" id="install">
+    <h2>Get started in seconds</h2>
+    <p class="sub">Python 3.11+ required.</p>
+
+    <div class="methods">
+      <div class="method">
+        <div class="label">One-liner (recommended)</div>
+        <code>curl -fsSL https://raw.githubusercontent.com/USIF-Andreas/loom-CLI/main/install.sh | bash</code>
+      </div>
+      <div class="method">
+        <div class="label">pip from source</div>
+        <code>pip install git+https://github.com/USIF-Andreas/loom-CLI.git</code>
+      </div>
+      <div class="method">
+        <div class="label">Clone &amp; develop</div>
+        <code>git clone https://github.com/USIF-Andreas/loom-CLI.git && cd loom-CLI && pip install -e .</code>
+      </div>
+    </div>
+
+    <div class="btns">
+      <a href="https://github.com/USIF-Andreas/loom-CLI" class="btn btn-outline">View on GitHub</a>
+    </div>
+  </section>
+
+</div>
+
+<footer>
+  <div class="container">
+    <div class="inner">
+      <p>LOOM CLI &mdash; agentic coding in your terminal</p>
+      <a href="https://github.com/USIF-Andreas/loom-CLI">GitHub</a>
+    </div>
+  </div>
+</footer>
+
+<script src="js/script.js"></script>
+</body>
+</html>

@@ -56,6 +56,12 @@ def init_db() -> None:
         );
         """
     )
+    # Migration: add updated_at column for pre-v2 databases
+    has_col = conn.execute(
+        "SELECT COUNT(*) FROM pragma_table_info('sessions') WHERE name='updated_at'"
+    ).fetchone()[0]
+    if not has_col:
+        conn.execute("ALTER TABLE sessions ADD COLUMN updated_at TIMESTAMP")
     conn.commit()
     conn.close()
 
@@ -63,9 +69,10 @@ def init_db() -> None:
 def create_session(session_id: str, working_dir: str) -> None:
     init_db()
     conn = _connect()
+    now = _now()
     conn.execute(
-        "INSERT OR IGNORE INTO sessions (id, created_at, working_dir) VALUES (?, ?, ?)",
-        (session_id, _now(), working_dir),
+        "INSERT OR IGNORE INTO sessions (id, created_at, working_dir, updated_at) VALUES (?, ?, ?, ?)",
+        (session_id, now, working_dir, now),
     )
     conn.commit()
     conn.close()
@@ -122,12 +129,42 @@ def _row_to_message(role: str, content: str) -> BaseMessage:
     return HumanMessage(content=content)
 
 
+def touch_session(session_id: str) -> None:
+    """Update the updated_at timestamp so the session sorts as recent."""
+    conn = _connect()
+    conn.execute(
+        "UPDATE sessions SET updated_at = ? WHERE id = ?",
+        (_now(), session_id),
+    )
+    conn.commit()
+    conn.close()
+
+
 def list_sessions() -> list[dict]:
     conn = _connect()
-    rows = conn.execute(
-        "SELECT id, created_at, working_dir FROM sessions ORDER BY created_at DESC"
-    ).fetchall()
+    try:
+        cols = "id, created_at, working_dir, COALESCE(updated_at, created_at) AS updated_at"
+        rows = conn.execute(
+            f"SELECT {cols} FROM sessions ORDER BY updated_at DESC"
+        ).fetchall()
+    except sqlite3.OperationalError:
+        rows = conn.execute(
+            "SELECT id, created_at, working_dir FROM sessions ORDER BY created_at DESC"
+        ).fetchall()
     conn.close()
     return [
-        {"id": r[0], "created_at": r[1], "working_dir": r[2]} for r in rows
+        {"id": r[0], "created_at": r[1], "working_dir": r[2]}
+        for r in rows
     ]
+
+
+def get_session_stats(session_id: str) -> dict:
+    """Get stats for a session: message count, token info."""
+    conn = _connect()
+    row = conn.execute(
+        "SELECT COUNT(*) FROM messages WHERE session_id = ?",
+        (session_id,),
+    ).fetchone()
+    msg_count = row[0] if row else 0
+    conn.close()
+    return {"message_count": msg_count}

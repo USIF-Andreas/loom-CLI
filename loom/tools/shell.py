@@ -19,6 +19,32 @@ def _truncate(text: str, limit: int = MAX_OUTPUT_CHARS) -> str:
     )
 
 
+def git(command: str, timeout: int = DEFAULT_TIMEOUT) -> str:
+    """Run a git command and return the result."""
+    try:
+        proc = subprocess.run(
+            f"git {command}",
+            shell=True,
+            capture_output=True,
+            text=True,
+            timeout=timeout,
+        )
+    except subprocess.TimeoutExpired as exc:
+        out = exc.stdout or ""
+        err = exc.stderr or ""
+        return f"Git command timed out after {timeout}s.\nstdout:\n{out}\nstderr:\n{err}"
+
+    exit_code = proc.returncode
+    stdout = proc.stdout or ""
+    stderr = proc.stderr or ""
+    combined = (
+        f"exit_code={exit_code}\n"
+        f"--- stdout ---\n{stdout}\n"
+        f"--- stderr ---\n{stderr}"
+    )
+    return _truncate(combined)
+
+
 def bash(
     command: str,
     timeout: int = DEFAULT_TIMEOUT,

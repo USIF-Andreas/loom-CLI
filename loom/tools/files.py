@@ -34,6 +34,30 @@ def write_file(path: str, content: str) -> str:
     return f"Wrote {len(content)} bytes to {path}"
 
 
+def delete_file(path: str) -> str:
+    """Delete a file from the filesystem."""
+    p = _resolve(path)
+    if not p.exists():
+        raise FileNotFoundError(f"File not found: {path}")
+    if p.is_dir():
+        import shutil
+        shutil.rmtree(p)
+        return f"Deleted directory {path}"
+    p.unlink()
+    return f"Deleted {path}"
+
+
+def rename_file(old_path: str, new_path: str) -> str:
+    """Rename or move a file."""
+    src = _resolve(old_path)
+    dst = _resolve(new_path)
+    if not src.exists():
+        raise FileNotFoundError(f"File not found: {old_path}")
+    dst.parent.mkdir(parents=True, exist_ok=True)
+    src.rename(dst)
+    return f"Renamed {old_path} -> {new_path}"
+
+
 def edit_file(path: str, old_str: str, new_str: str) -> str:
     """Replace an exact string match in a file.
 

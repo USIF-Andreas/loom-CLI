@@ -44,10 +44,16 @@ def is_sensitive(command: str) -> bool:
 
 
 def needs_permission(tool_name: str, tool_input: dict) -> bool:
-    """Decide whether a tool call needs user confirmation."""
+    """Decide whether a tool call needs user confirmation.
+
+    Non-sensitive bash commands (e.g. mkdir, ls) skip confirmation.
+    write_file / edit_file always confirm since they modify the project.
+    """
     if tool_name not in WRITE_TOOLS:
         return False
-    cmd = tool_input.get("command", "")
-    if cmd and is_denied(cmd):
-        return True  # will be denied regardless, but surface it
-    return True
+    if tool_name == "bash":
+        cmd = tool_input.get("command", "")
+        if is_denied(cmd):
+            return True
+        return is_sensitive(cmd)
+    return True  # write_file / edit_file always confirm

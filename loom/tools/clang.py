@@ -114,6 +114,38 @@ TOOL_SCHEMAS: list[dict] = [
         },
     },
     {
+        "name": "delete_file",
+        "description": "Delete a file from the filesystem. Use with caution.",
+        "input_schema": {
+            "type": "object",
+            "properties": {"path": {"type": "string"}},
+            "required": ["path"],
+        },
+    },
+    {
+        "name": "rename_file",
+        "description": "Rename or move a file from old_path to new_path.",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "old_path": {"type": "string"},
+                "new_path": {"type": "string"},
+            },
+            "required": ["old_path", "new_path"],
+        },
+    },
+    {
+        "name": "git",
+        "description": "Run a git command. Use for status, diff, log, add, commit, branch, checkout, etc.",
+        "input_schema": {
+            "type": "object",
+            "properties": {
+                "command": {"type": "string", "description": "Git command arguments (e.g. 'status', 'diff', 'log --oneline -5')"},
+            },
+            "required": ["command"],
+        },
+    },
+    {
         "name": "fetch_url",
         "description": (
             "Download and read the contents of a web page or URL. Returns the "

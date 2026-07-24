@@ -8,12 +8,68 @@ import uuid
 from pathlib import Path
 
 import typer
+from rich.text import Text
+
+from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
 
 from .agent.graph import run_agent, run_agent_streaming
 from .config import Config, PROVIDERS, CONFIG_PATH, load_env_keys
 from .session import db
 from .tools import shell
 from .ui import render
+
+
+def _isatty():
+    """Check if we're in a real terminal (not a pipe or redirect)."""
+    try:
+        return sys.stdout.isatty()
+    except Exception:
+        return False
+
+
+def _get_config() -> Config:
+    """Get the current CLI configuration."""
+    from .config import Config
+    # We need to access the global ctx from the cli module
+    # This is a bit of a hack, but we can extract it from the command context
+    # For now, let's try to get it from the active config or create a default
+    import sys
+    
+    # Try to get the context from the frame - this is fragile but works for now
+    # In a cleaner architecture, we'd pass the config around
+    try:
+        # Look for the ctx in the globals of the cli module
+        import loom.cli as cli_module
+        if hasattr(cli_module, 'ctx') and cli_module.ctx:
+            return cli_module.ctx["config"]
+    except Exception:
+        pass
+    
+    # Fallback: create a default config (this should ideally not happen in practice)
+    # But we need to avoid crashing, so we'll try to get the current provider/model
+    # from the global state if possible
+    try:
+        from .config import PROVIDERS, load_env_keys
+        import os
+        
+        # Try to get current provider from environment or default
+        provider = os.environ.get("LOOM_PROVIDER", "anthropic")  # default
+        env_keys = load_env_keys()
+        pinfo = PROVIDERS.get(provider, {})
+        api_key = (
+            os.environ.get(pinfo.get("key_env", ""))
+            or env_keys.get(pinfo.get("key_env", ""))
+        )
+        
+        return Config(
+            provider=provider,
+            api_key=api_key or "dummy",
+            base_url=pinfo.get("base_url", "")
+        )
+    except Exception:
+        # Last resort fallback
+        return Config(provider="anthropic", api_key="dummy", base_url="")
+
 
 app = typer.Typer(
     help="loom — a terminal-based agentic coding assistant",
@@ -72,6 +128,12 @@ def main(
             provider=_resolve_opt(provider, "--provider"),
             model=_resolve_opt(model, "--model"),
             yolo=yolo or ("--yolo" in sys.argv),
+        )
+        return
+    if tokens and tokens[0] in ("architect", "architect-ui"):
+        architect_ui(
+            provider=_resolve_opt(provider, "--provider"),
+            model=_resolve_opt(model, "--model"),
         )
         return
 
@@ -150,8 +212,8 @@ def _run_agent_from_args(prompt_text: str, parsed: dict) -> None:
         session_id = parsed["resume"]
         db.init_db()
         history = db.load_session_messages(session_id)
-        from ..agent.prompts import build_system_prompt
-        from ..session.tree import project_tree
+        from .agent.prompts import build_system_prompt
+        from .session.tree import project_tree
         from langchain_core.messages import HumanMessage, SystemMessage
 
         summary = project_tree(working_dir)
@@ -182,10 +244,10 @@ def run_resume(messages, config, session_id, working_dir, permission_mode):
     """Run with a prebuilt message list (resumed session)."""
     from langgraph.graph import END, StateGraph
 
-    from ..provider import build_chat_model
-    from ..tools import execute_tools
-    from ..tools.clang import TOOL_SCHEMAS as SCHEMAS
-    from ..ui import confirm as confirm_ui
+    from .provider import build_chat_model
+    from .tools import execute_tools
+    from .tools.clang import TOOL_SCHEMAS as SCHEMAS
+    from .ui import confirm as confirm_ui
 
     llm = build_chat_model(config=config).bind_tools(SCHEMAS)
 
@@ -225,9 +287,16 @@ def run_resume(messages, config, session_id, working_dir, permission_mode):
         db.save_message(session_id, msg)
 
 
+def _interactive_model_selector(models: list[dict], current: str) -> str | None:
+    from .architect.server import _interactive_select
+    ids = [m["id"] for m in models]
+    return _interactive_select(ids)
+
+
 def _cmd_models(provider: str | None) -> None:
     """List available models for the configured provider."""
     from .provider import list_models
+    from .config import Config
 
     try:
         config = _build_config(provider, None)
@@ -237,16 +306,39 @@ def _cmd_models(provider: str | None) -> None:
 
     try:
         model_list = list_models(config)
-    except Exception as exc:  # network / auth errors
+    except Exception as exc:
         render.render_error(f"Failed to fetch models: {exc}")
         raise typer.Exit(code=1)
+
+    if _isatty() and len(model_list) > 1:
+        selected = _interactive_model_selector(model_list, config.model)
+        if selected and selected != config.model:
+            config.model = selected
+            render.render_role("system", f"Model set to: {selected}")
+        return
 
     render.render_role("system", f"{config.provider}: {len(model_list)} model(s)")
     for m in model_list:
         extra = ""
         if m.get("context_length"):
             extra = f"  (ctx={m['context_length']})"
-        render.render_text("system", f"  {m['id']}{extra}")
+        marker = " *" if m["id"] == config.model else ""
+        render.render_text("system", f"  {m['id']}{extra}{marker}")
+
+
+@app.command("architect-ui")
+@app.command("architect")
+def architect_ui(
+    provider: str = typer.Option(None, "--provider"),
+    model: str = typer.Option(None, "--model"),
+):
+    """Configure and run a multi-agent architecture in the terminal."""
+    try:
+        config = _build_config(provider, model)
+    except RuntimeError as exc:
+        render.render_error(str(exc))
+        raise typer.Exit(code=1)
+    _architect_terminal(config)
 
 
 def _cmd_sessions() -> None:
@@ -261,6 +353,14 @@ def _cmd_sessions() -> None:
         render.render_text(
             "system", f"  {r['id']}  {r['created_at']}  {r['working_dir']}"
         )
+
+
+def _architect_terminal(config: Config) -> None:
+    from .architect.server import run_architect_terminal
+    run_architect_terminal(config)
+
+
+
 
 
 @app.command()
@@ -312,8 +412,10 @@ def chat(
     from .ui.input_box import read_input
 
     render_logo()
-    render.render_role("system", f"provider={config.provider} model={config.model}")
-    render.render_role("system", f"commands: {slash.menu_text()}  (type `/` to use)")
+    render.render_text("system",
+        f"  {config.provider}  ·  {config.model}  "
+        f"·  type / for commands"
+    )
 
     # Selection state: when set, the next line picks from this list.
     pending_menu: dict = {}
@@ -333,10 +435,11 @@ def chat(
             "system", f"Showing {len(models)} of {len(all_models)} models — pick a number:"
         )
         for i, m in enumerate(models, 1):
+            from .provider import model_line_parts
+            parts = model_line_parts(m, active_provider=config.provider)
             mid = m["id"] or ""
-            vendor = mid.split("/", 1)[0] if "/" in mid else config.provider
             extra = f"  (ctx={m['context_length']})" if m.get("context_length") else ""
-            render.render_text("system", f"  {i}. {mid}  [{vendor}]{extra}")
+            render.render_text("system", f"  {i}. {mid}  {parts['note']}{extra}")
         # Show available vendors so the user knows what to type to filter.
         if not filt and len(all_models) > 20:
             vendors = {}
@@ -365,6 +468,15 @@ def chat(
         except Exception as exc:
             render.render_error(f"Failed to fetch models: {exc}")
             return
+
+        if _isatty() and len(models) > 1:
+            selected = _interactive_model_selector(models, config.model)
+            if selected:
+                if selected != config.model:
+                    config.model = selected
+                    render.render_role("system", f"Model set to: {selected}")
+            return
+
         pending_menu.clear()
         pending_menu["filter"] = ""
         _render_models(models, models)
@@ -443,6 +555,9 @@ def chat(
             render.render_text("system", f"  {i}. /{name}")
         render.render_text("system", "Pick a number, or any text to cancel.")
 
+    # Token accounting for the chat session (prompt + completion totals).
+    session_tokens = {"input": 0, "output": 0}
+
     ctx = {
         "config": config,
         "session_id": session_id,
@@ -451,6 +566,7 @@ def chat(
         "history": history,
         "provider": config.provider,
         "exit": False,
+        "tokens": session_tokens,
         "print": _print,
         "_show_models": _show_models,
         "_show_providers": _show_providers,
@@ -461,7 +577,6 @@ def chat(
         try:
             user_input = read_input("> ")
         except (EOFError, KeyboardInterrupt):
-            render.render_text("system", "bye.")
             break
         if not user_input:
             continue
@@ -470,33 +585,6 @@ def chat(
         if pending_menu:
             kind = pending_menu.get("kind")
             items = pending_menu.get("items", [])
-
-            # 'c' cancels any pending menu.
-            if user_input.strip().lower() == "c":
-                pending_menu.clear()
-                render.render_text("system", "Cancelled.")
-                continue
-
-            # In model mode, non-numeric text filters the list instead of canceling.
-            if kind == "model" and not user_input.isdigit():
-                all_models = pending_menu.get("all", [])
-                q = user_input.strip().lower()
-                if q:
-                    filtered = [
-                        m for m in all_models if q in (m["id"] or "").lower()
-                    ]
-                    pending_menu["filter"] = q
-                    if not filtered:
-                        render.render_text(
-                            "system", f"No models match '{q}'. Try another filter."
-                        )
-                        _render_models(all_models, all_models)
-                    else:
-                        _render_models(filtered, all_models)
-                else:
-                    pending_menu["filter"] = ""
-                    _render_models(all_models, all_models)
-                continue
 
             if user_input.isdigit() and 1 <= int(user_input) <= len(items):
                 choice = items[int(user_input) - 1]
@@ -510,6 +598,7 @@ def chat(
                     cmd = slash.get_command(choice)
                     if cmd:
                         cmd.handler(slash.ChatController(ctx))
+                        history[:] = ctx["history"]
                 continue
             # Any other text cancels the pending menu.
             pending_menu.clear()
@@ -517,6 +606,9 @@ def chat(
             continue
 
         if user_input in ("/exit", "/quit"):
+            render.render_session_token_footer(
+                session_tokens["input"], session_tokens["output"]
+            )
             break
         if slash.is_command(user_input):
             parts = user_input[1:].split()
@@ -524,32 +616,92 @@ def chat(
             if cmd is None:
                 render.render_error(f"Unknown command: {user_input}")
                 continue
-            # Pass trailing args (e.g. "/serve portfolio") via ctx.
             ctx["_last_args"] = parts[1:]
             cmd.handler(slash.ChatController(ctx))
+            history[:] = ctx["history"]
             continue
-        # Agent turn (streaming).
+        # Agent turn — optionally plan first.
+        if ctx.get("plan_mode", False):
+            from .planner import generate_plan
+            render.render_text("system", "Generating plan...")
+            plan = generate_plan(user_input, config)
+            choice = render.confirm_plan(plan)
+            if choice in ("n", "no"):
+                render.render_text("system", "Plan rejected.")
+                continue
+            elif choice in ("s", "skip"):
+                ctx["plan_mode"] = False
+                render.render_text("system", "Planning mode disabled for this turn.")
         try:
-            from .ui.logo import animate_thinking
-
-            animate_thinking("thinking", duration=0.8)
+            render.render_role("system", "working...")
             new_history = run_agent_streaming(
                 prompt=user_input,
                 config=config,
-                session_id=session_id,
+                session_id=ctx["session_id"],
                 working_dir=working_dir,
                 permission_mode=permission_mode,
                 history=history,
                 on_token=lambda t: _stream_write(t),
+                on_tool_start=lambda name, args: render.render_streaming_tool(name, args),
+                on_tool_end=lambda name, result: render.render_streaming_tool_done(name, result),
             )
-            history[:] = new_history
+            history[:] = [
+                m for m in new_history
+                if isinstance(m, HumanMessage)
+                or (isinstance(m, AIMessage) and not m.tool_calls)
+            ]
             _stream_flush()
+            render.render_streaming_done()
         except Exception as exc:
             render.render_error(f"Agent error: {exc}")
-        for msg in history:
-            db.save_message(session_id, msg)
+            for msg in history:
+                db.save_message(ctx["session_id"], msg)
+            # Retry once with stripped history (tool_call messages cause provider validation issues)
+            history[:] = [m for m in history if isinstance(m, HumanMessage)]
+            try:
+                render.render_text("system", "Retrying with clean history...")
+                new_history = run_agent_streaming(
+                    prompt=user_input,
+                    config=config,
+                    session_id=ctx["session_id"],
+                    working_dir=working_dir,
+                    permission_mode=permission_mode,
+                    history=history,
+                    on_token=lambda t: _stream_write(t),
+                    on_tool_start=lambda name, args: render.render_streaming_tool(name, args),
+                    on_tool_end=lambda name, result: render.render_streaming_tool_done(name, result),
+                )
+                history[:] = [
+                    m for m in new_history
+                    if isinstance(m, HumanMessage)
+                    or (isinstance(m, AIMessage) and not m.tool_calls)
+                ]
+                _stream_flush()
+                render.render_streaming_done()
+            except Exception:
+                render.render_error("Retry failed. Try /clear and ask again.")
+                continue
 
-    render.render_text("system", "bye.")
+        from .provider import model_usage
+        turn_in = turn_out = 0
+        for msg in new_history:
+            if isinstance(msg, AIMessage):
+                u = model_usage(msg)
+                turn_in += u["input"]
+                turn_out += u["output"]
+        session_tokens["input"] += turn_in
+        session_tokens["output"] += turn_out
+        render.render_token_usage_running(
+            turn_in, turn_out, session_tokens["input"], session_tokens["output"]
+        )
+        db.touch_session(ctx["session_id"])
+        for msg in history:
+            db.save_message(ctx["session_id"], msg)
+
+    render.console.print(Text("\n  goodbye ✦", style="color(147)"))
+    render.render_session_token_footer(
+        session_tokens["input"], session_tokens["output"]
+    )
 
 
 _streaming_buffer = ""

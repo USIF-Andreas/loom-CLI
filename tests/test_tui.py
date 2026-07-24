@@ -12,12 +12,12 @@ from loom.ui import commands as cmd
 def test_commands_listed_with_commands_first():
     assert cmd.COMMAND_LIST[0].name == "commands"
     names = [c.name for c in cmd.COMMAND_LIST]
-    assert names == ["commands", "clear", "models", "provider", "serve", "help", "exit"]
+    assert names == ["commands", "clear", "models", "provider", "sessions", "architect", "multi", "plan", "graph", "index", "context", "tools", "test", "bench", "plugins", "mcp", "config", "git", "checkpoint", "checkpoints", "undo", "remember", "forget", "memory", "serve", "summarize", "goat", "help", "exit"]
 
 
 def test_menu_text_has_all():
     text = cmd.menu_text()
-    for name in ("commands", "clear", "models", "provider", "serve", "help", "exit"):
+    for name in ("commands", "clear", "models", "provider", "sessions", "architect", "multi", "plan", "graph", "index", "context", "tools", "test", "bench", "plugins", "mcp", "config", "git", "checkpoint", "checkpoints", "undo", "remember", "forget", "memory", "serve", "summarize", "goat", "help", "exit"):
         assert f"/{name}" in text
 
 
@@ -50,6 +50,14 @@ def test_commands_handler_lists_all():
     assert any("/commands" in t for _, t in seen)
 
 
+def test_summarize_command_runs_without_error():
+    seen = []
+    ctx = {"working_dir": ".", "print": lambda r, t: seen.append((r, t)), "provider": "groq"}
+    ctrl = cmd.ChatController(ctx)
+    cmd._cmd_summarize(ctrl)
+    assert any("mermaid" in t.lower() for _, t in seen)
+
+
 def test_streaming_calls_on_token():
     from langchain_core.messages import AIMessage
 
@@ -58,9 +66,9 @@ def test_streaming_calls_on_token():
     def fake_graph(config, mode):
         graph = MagicMock()
         ai = AIMessage(content="hello world")
-        graph.stream = lambda state, stream_mode="messages": iter([(ai, None)])
-        ai2 = AIMessage(content="hello world")
-        graph.invoke = lambda state: {"messages": state["messages"] + [ai2]}
+        graph.stream = lambda state, stream_mode="values": iter([
+            {"messages": state["messages"] + [ai]}
+        ])
         return graph
 
     with patch.object(agent_pkg.graph, "build_graph", fake_graph):

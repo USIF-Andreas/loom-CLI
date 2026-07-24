@@ -9,6 +9,7 @@ from langchain_core.messages import (
     BaseMessage,
     HumanMessage,
     SystemMessage,
+    ToolMessage,
 )
 from langgraph.graph import END, StateGraph
 
@@ -41,6 +42,7 @@ def build_graph(config: Config, permission_mode: str = "confirm"):
 
     def tools_with_permission(state: dict) -> dict:
         """Wrapper that asks for permission before running write/shell tools."""
+        nonlocal permission_mode
         last: AIMessage = state["messages"][-1]
         allow = True
         for call in last.tool_calls or []:
@@ -60,7 +62,7 @@ def build_graph(config: Config, permission_mode: str = "confirm"):
             if confirm_ui.needs_permission(name, call["args"]):
                 ans = render.confirm_prompt(f"Run: {detail}")
                 if ans == "always":
-                    permission_mode_local = "yolo"  # noqa: F841
+                    permission_mode = "yolo"
                 if ans != "allow" and ans != "always":
                     allow = False
         return execute_tools({**state, "permission_result": "allow" if allow else "deny"})
@@ -117,9 +119,9 @@ def run_agent(
         "permission_result": "allow",
     }
 
+    render.console.print("  thinking…", style="dim")
     final_state = app.invoke(state)
 
-    # Stream-style rendering of the final assistant message.
     for msg in final_state["messages"]:
         if isinstance(msg, AIMessage) and msg.content:
             render.render_text("assistant", _content_str(msg.content))
@@ -139,6 +141,33 @@ def _content_str(content) -> str:
     return "\n".join(parts)
 
 
+def _render_file_op(symbol: str, result: str, on_token: callable | None) -> None:
+    """Display a diff-style line for file operations.
+
+    Writes are shown as ``+ path`` (green), edits as ``~ path`` (amber),
+    deletes as ``- path`` (red).
+    """
+    text = str(result)
+    # Extract path from tool result messages like "Wrote 42 bytes to path" or "Edited path (..)"
+    path = text
+    for prefix in ("Wrote", "Edited"):
+        if text.startswith(prefix):
+            path = text.rsplit(" to ", 1)[-1] if " to " in text else text.rsplit(" (", 1)[0].replace("Edited ", "", 1)
+            break
+    line = f"  {symbol} {path}"
+    if on_token:
+        on_token(f"\n{line}\n")
+    else:
+        styles = {"+": "bold color(114)", "-": "bold color(203)", "~": "bold color(222)"}
+        render.console.print(line, style=styles.get(symbol, "dim"))
+
+
+def _is_delete_cmd(result: str) -> bool:
+    """Check if a bash result suggests a file was deleted."""
+    text = str(result).lower()
+    return any(x in text for x in ("removed", "deleted", "rm "))
+
+
 def run_agent_streaming(
     prompt: str,
     config: Optional[Config] = None,
@@ -148,6 +177,8 @@ def run_agent_streaming(
     project_summary: str = "",
     history: Optional[list] = None,
     on_token: Optional[callable] = None,
+    on_tool_start: Optional[callable] = None,
+    on_tool_end: Optional[callable] = None,
 ) -> list[BaseMessage]:
     """Run the agent loop, streaming tokens/tools live.
 
@@ -166,7 +197,7 @@ def run_agent_streaming(
 
     if history:
         system = SystemMessage(content=build_system_prompt(project_summary, working_dir))
-        messages: list[BaseMessage] = [system] + list(history)
+        messages: list[BaseMessage] = [system] + list(history) + [HumanMessage(content=prompt)]
     else:
         system = SystemMessage(content=build_system_prompt(project_summary, working_dir))
         messages = [system, HumanMessage(content=prompt)]
@@ -178,27 +209,42 @@ def run_agent_streaming(
         "permission_result": "allow",
     }
 
-    last_assistant = ""
-    for chunk in app.stream(state, stream_mode="messages"):
-        msg, _ = chunk
+    final_messages: list[BaseMessage] = []
+    for update in app.stream(state, stream_mode="values"):
+        if not update.get("messages"):
+            continue
+        msg = update["messages"][-1]
         if isinstance(msg, AIMessage):
             text = _content_str(msg.content)
             if text:
-                new = text[len(last_assistant):]
-                if new:
-                    if on_token:
-                        on_token(new)
-                    else:
-                        render.console.print(new, end="", style="bright_blue")
-                last_assistant = text
-            for call in getattr(msg, "tool_calls", None) or []:
                 if on_token:
+                    on_token(text)
+                else:
+                    render.console.print(text, end="", style="bright_blue")
+            for call in getattr(msg, "tool_calls", None) or []:
+                if on_tool_start:
+                    on_tool_start(call["name"], call.get("args", {}))
+                elif on_token:
                     on_token(f"\n⚙ {call['name']}({call['args']})\n")
                 else:
-                    render.render_role("tool_call", f"→ {call['name']}({call['args']})")
+                    render.render_tool_call(call["name"], call["args"])
+        if isinstance(msg, ToolMessage):
+            name = msg.name or ""
+            result = msg.content or ""
+            if on_tool_end:
+                on_tool_end(name, result)
+            if name == "write_file":
+                _render_file_op("+", result, on_token)
+            elif name == "edit_file":
+                _render_file_op("~", result, on_token)
+            elif name == "bash" and _is_delete_cmd(result):
+                _render_file_op("-", result, on_token)
+            else:
+                if on_token:
+                    on_token(f"\n   → {result}\n")
+                else:
+                    render.render_tool_result(name, result)
+        final_messages = update["messages"]
     if not on_token:
-        render.console.print()  # newline after streamed text
-
-    # Final full state for returning complete history.
-    final_state = app.invoke(state)
-    return final_state["messages"]
+        render.console.print()
+    return final_messages

@@ -16,9 +16,12 @@ TOOL_FUNCS: dict[str, Any] = {
     "read_file": files.read_file,
     "write_file": files.write_file,
     "edit_file": files.edit_file,
+    "delete_file": files.delete_file,
+    "rename_file": files.rename_file,
     "bash": shell.bash,
     "glob": search.glob,
     "grep": search.grep,
+    "git": shell.git,
     "web_search": web.web_search,
     "fetch_url": web.fetch_url,
 }

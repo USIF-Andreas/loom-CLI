@@ -89,6 +89,22 @@ class Config:
             or env_keys.get(pinfo["key_env"])
             or data.get(pinfo["key_cfg"])
         )
+
+        # Auto-detect provider from available keys when default has no key.
+        if not api_key and not provider_override and "provider" not in data:
+            for prov_name, prov_info in PROVIDERS.items():
+                if prov_name == provider:
+                    continue
+                key = (
+                    os.environ.get(prov_info["key_env"])
+                    or env_keys.get(prov_info["key_env"])
+                    or data.get(prov_info["key_cfg"])
+                )
+                if key:
+                    provider = prov_name
+                    pinfo = prov_info
+                    api_key = key
+                    break
         model = (
             data.get("model")
             or os.environ.get("LOOM_MODEL")
