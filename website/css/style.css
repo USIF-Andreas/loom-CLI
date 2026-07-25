@@ -655,8 +655,8 @@ footer a:hover { color: var(--primary2); }
   .hero h1 { font-size: clamp(1.4rem, 5vw, 2rem); }
   .hero p { font-size: .95rem; }
   .install-block .cmd { font-size: .7rem; padding: .6rem .75rem; }
-  .provider-logos { gap: .75rem; }
-  .provider-card { padding: .4rem .75rem; font-size: .6rem; }
+  .provider-logos { gap: .75rem; justify-content: center; }
+  .provider-card { padding: .4rem .75rem; font-size: .6rem; max-width: 100%; }
   .terminal-demo .output { font-size: .65rem; padding: .75rem; }
   .install-block .cmd { font-size: .65rem; padding: .5rem .75rem; }
   .methods { gap: .75rem; }
