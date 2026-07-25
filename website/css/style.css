@@ -529,6 +529,26 @@ footer a:hover { color: var(--primary2); }
   .hero-left .loom-ascii { text-align: center; }
   .hero-left .install-block { margin: 1.5rem auto; }
   .hero-left .btns { justify-content: center; }
+  /* Ghost + LOOM on mobile: stack vertically, prevent layout shift from ghost animation frames */
+  .ghost-logo {
+    flex-direction: column;
+    gap: 1rem;
+  }
+  .ghost {
+    width: 100%;
+    max-width: 280px;
+    margin: 0 auto;
+  }
+}
+
+@media (max-width: 480px) {
+  .ghost {
+    font-size: 0.8rem;
+    max-width: 100%;
+  }
+  .loom-ascii {
+    font-size: 0.5rem;
+  }
 }
 
 /* Game */
