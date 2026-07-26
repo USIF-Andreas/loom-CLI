@@ -59,7 +59,7 @@ TOOL_SCHEMAS: list[dict] = [
             "properties": {
                 "command": {"type": "string"},
                 "timeout": {
-                    "type": "integer",
+                    "type": ["integer", "string"],
                     "description": "Timeout in seconds (default 30).",
                 },
             },
@@ -106,7 +106,7 @@ TOOL_SCHEMAS: list[dict] = [
             "properties": {
                 "query": {"type": "string"},
                 "max_results": {
-                    "type": "integer",
+                    "type": ["integer", "string"],
                     "description": "Max results to return (default 5).",
                 },
             },

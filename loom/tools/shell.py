@@ -47,7 +47,7 @@ def git(command: str, timeout: int = DEFAULT_TIMEOUT) -> str:
 
 def bash(
     command: str,
-    timeout: int = DEFAULT_TIMEOUT,
+    timeout: int | str = DEFAULT_TIMEOUT,
     cwd: str | None = None,
 ) -> str:
     """Run a shell command and return a formatted result string.
@@ -57,6 +57,7 @@ def bash(
     background so the agent loop is not blocked; the process keeps running and
     can be reached via the printed URL.
     """
+    timeout = int(timeout)  # some models pass "30" instead of 30
     # Detect server-like commands that would otherwise block forever.
     looks_like_server = any(
         tok in command

@@ -29,6 +29,7 @@ def web_search(query: str, max_results: int = 5) -> str:
     Returns formatted ``title — url`` lines plus a short snippet per result.
     No API key needed.
     """
+    max_results = int(max_results)  # some models pass "5" instead of 5
     try:
         resp = requests.post(
             "https://html.duckduckgo.com/html/",
