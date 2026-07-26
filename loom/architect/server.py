@@ -203,7 +203,7 @@ def _pick_model(provider: str, current: str, header: str = "") -> str | None:
     # Filter out content-safety / safeguard models (not chat models)
     def _is_safeguard(mid: str) -> bool:
         low = mid.lower()
-        return any(x in low for x in ("guard", "safeguard", "prompt_"))
+        return any(x in low for x in ("guard", "safeguard", "prompt_", "gpt-oss", "whisper", "orpheus"))
 
     models = [m for m in models if not _is_safeguard(m["id"])]
 
