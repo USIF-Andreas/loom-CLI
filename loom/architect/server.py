@@ -200,6 +200,13 @@ def _pick_model(provider: str, current: str, header: str = "") -> str | None:
         console.print(f"  [color(203)]Could not fetch models: {exc}[/]")
         return current
 
+    # Filter out content-safety / safeguard models (not chat models)
+    def _is_safeguard(mid: str) -> bool:
+        low = mid.lower()
+        return any(x in low for x in ("guard", "safeguard", "prompt_"))
+
+    models = [m for m in models if not _is_safeguard(m["id"])]
+
     if _isatty():
         model_ids = [m["id"] for m in models]
         result = _interactive_select(model_ids, header=header)

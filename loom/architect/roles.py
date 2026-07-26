@@ -75,7 +75,10 @@ def _build_node(
             system_parts.append(f"\nReview notes from previous iteration:\n{review}")
         system = SystemMessage(content="\n\n".join(system_parts))
 
-        messages = list(state.messages)
+        # Trim messages to only what this role needs — drop ToolMessages
+        # (tool call outputs bloat context, and each node only needs the
+        # conversation context, not raw tool results from other nodes).
+        messages = [m for m in state.messages if not isinstance(m, ToolMessage)]
 
         # Agent loop for this node: model -> tools -> model -> ... -> final answer
         node_messages = [system] + messages
@@ -93,9 +96,18 @@ def _build_node(
                     break
                 except Exception as exc:
                     err = str(exc).lower()
-                    if attempt < _MAX_RETRIES and any(
-                        x in err for x in ("429", "rate limit", "too many requests", "try again")
-                    ):
+                    is_rate = any(
+                        x in err
+                        for x in (
+                            "429", "413",
+                            "rate limit", "rate_limit",
+                            "too many requests",
+                            "try again",
+                            "request too large",
+                            "tokens per minute",
+                        )
+                    )
+                    if attempt < _MAX_RETRIES and is_rate:
                         backoff = 1.5 ** attempt + random.uniform(0, 1)
                         time.sleep(backoff)
                         continue
