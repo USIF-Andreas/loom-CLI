@@ -169,6 +169,10 @@ def _build_node(
                             display += "..."
                         render_file_op("-", display)
 
+            # Compact context: keep only system + original messages + current cycle
+            # (previous cycles' AIMessages and ToolMessages are no longer needed)
+            node_messages = [system] + messages + [response] + node_messages[-len(response.tool_calls):]
+
         # Return updated state: original messages + new AI/tool messages (exclude system prompt)
         new_messages = node_messages[len(messages) + 1 :]  # after system + original
 
