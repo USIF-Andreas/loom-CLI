@@ -107,8 +107,15 @@ def _build_node(
                             "tokens per minute",
                         )
                     )
-                    if attempt < _MAX_RETRIES and is_rate:
+                    if not is_rate:
+                        raise
+                    # TPM errors need longer waits (rate windows reset ~per minute)
+                    is_tpm = any(x in err for x in ("413", "tokens per minute", "request too large"))
+                    if is_tpm:
+                        backoff = 15.0 * (1.5 ** (attempt - 1)) + random.uniform(0, 5)
+                    else:
                         backoff = 1.5 ** attempt + random.uniform(0, 1)
+                    if attempt < _MAX_RETRIES:
                         time.sleep(backoff)
                         continue
                     raise
