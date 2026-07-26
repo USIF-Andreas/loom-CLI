@@ -107,6 +107,22 @@ def _build_node(
                             "tokens per minute",
                         )
                     )
+                    is_tool_error = any(
+                        x in err
+                        for x in (
+                            "tool call validation failed",
+                            "tool_use_failed",
+                            "was not in request.tools",
+                            "tool use failed",
+                        )
+                    )
+                    if is_tool_error:
+                        if attempt < _MAX_RETRIES:
+                            time.sleep(1.0)
+                            continue
+                        # Give up on tool calls for this round
+                        response = None
+                        break
                     if not is_rate:
                         raise
                     # TPM errors need longer waits (rate windows reset ~per minute)
@@ -119,6 +135,8 @@ def _build_node(
                         time.sleep(backoff)
                         continue
                     raise
+            if response is None:
+                break
             node_messages.append(response)
 
             # Accumulate token usage from response metadata
@@ -135,6 +153,10 @@ def _build_node(
                 break
 
             for call in response.tool_calls:
+                if call["name"] not in spec.tools:
+                    content = f"Error: tool '{call['name']}' is not available. Allowed: {', '.join(spec.tools)}"
+                    node_messages.append(ToolMessage(content=content, tool_call_id=call["id"]))
+                    continue
                 content = execute_tool_call(call["name"], call["args"], allow=True)
                 node_messages.append(
                     ToolMessage(content=content, tool_call_id=call["id"])
