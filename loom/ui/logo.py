@@ -33,12 +33,15 @@ def render_logo(use_wide: bool = False, show_goat: bool = True) -> None:
 def _animate_ghost() -> None:
     from .goat import _color_frame, FLY_FRAMES
 
-    sys.stdout.write("\033[3J\033[2J\033[H")
+    h = 6
+    # Reserve space so the animation doesn't scroll the terminal.
+    for _ in range(h):
+        sys.stdout.write("\n")
     sys.stdout.flush()
-    time.sleep(0.15)
+    time.sleep(0.05)
 
     for frame in FLY_FRAMES:
-        sys.stdout.write("\033[H\033[J")
+        sys.stdout.write(f"\033[{h}A\033[J")
         sys.stdout.flush()
         console.print(_color_frame(frame))
         time.sleep(0.12)

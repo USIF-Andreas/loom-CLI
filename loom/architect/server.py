@@ -78,7 +78,7 @@ def _isatty() -> bool:
     return sys.stdin.isatty()
 
 
-def _interactive_select(items: list[str]) -> str | None:
+def _interactive_select(items: list[str], header: str = "") -> str | None:
     """Filtered item picker using raw terminal I/O with full-screen redraw."""
     import tty, termios, sys, os, select
 
@@ -95,6 +95,8 @@ def _interactive_select(items: list[str]) -> str | None:
             selected = max(0, len(filtered) - 1)
 
         sys.stdout.write("\033[3J\033[H\033[J")  # clear scrollback + home + clear screen
+        if header:
+            sys.stdout.write(f"\033[2m  {header}\033[0m\r\n\r\n")
         for i, item in enumerate(filtered):
             vendor = item.split("/", 1)[0] if "/" in item else ""
             c = COLORS.get(vendor, "7")
@@ -154,11 +156,14 @@ def _interactive_select(items: list[str]) -> str | None:
     return result
 
 
-def _pick_provider(current: str) -> str:
-    names = list(PROVIDERS.keys())
+def _pick_provider(current: str, header: str = "") -> str | None:
+    names = _available_providers()
+    if not names:
+        console.print("  [color(203)]No API keys found. Set a key in ~/.loom/.env[/]")
+        return None
     if _isatty():
-        result = _interactive_select(names)
-        return result if result else current
+        result = _interactive_select(names, header=header)
+        return result  # None = cancelled
     console.print("\n  [bold]Select a provider:[/]")
     for i, name in enumerate(names, 1):
         marker = " *" if name == current else ""
@@ -176,7 +181,7 @@ def _pick_provider(current: str) -> str:
         console.print("  [color(203)]Invalid choice[/]")
 
 
-def _pick_model(provider: str, current: str) -> str:
+def _pick_model(provider: str, current: str, header: str = "") -> str | None:
     from ..provider import list_models
     from ..config import Config, PROVIDERS, load_env_keys
     import os
@@ -197,8 +202,8 @@ def _pick_model(provider: str, current: str) -> str:
 
     if _isatty():
         model_ids = [m["id"] for m in models]
-        result = _interactive_select(model_ids)
-        return result if result else current
+        result = _interactive_select(model_ids, header=header)
+        return result  # None = cancelled
 
     from ..provider import model_line_parts
     display_models = models[:30]
@@ -226,13 +231,42 @@ def _pick_model(provider: str, current: str) -> str:
         console.print("  [color(203)]Invalid choice[/]")
 
 
-def _configure_nodes(spec: dict):
+_ROLE_DESCRIPTIONS = {
+    "thinker": "Strategic planner — creates a detailed plan and writes it to plan.md",
+    "worker": "Implementer — follows the plan and implements the code",
+    "debugger": "Code reviewer — checks for correctness, approves or sends back for fixes",
+}
+
+
+def _available_providers() -> list[str]:
+    from ..config import PROVIDERS, load_env_keys
+    import os
+
+    env_keys = load_env_keys()
+    available = []
+    for name, pinfo in PROVIDERS.items():
+        key = os.environ.get(pinfo["key_env"]) or env_keys.get(pinfo["key_env"])
+        if key:
+            available.append(name)
+    return available
+
+
+def _configure_nodes(spec: dict) -> bool:
+    """Configure provider/model per node.  Returns False if cancelled."""
     for node in spec["nodes"]:
-        console.print(f"\n  [bold]── {node['name']} ({node['role']}) ──[/]")
-        provider = _pick_provider(node["provider"])
+        console.print(f"\n  [bold]\u2500\u2500 {node['name']} ({node['role']}) \u2500\u2500[/]")
+        desc = _ROLE_DESCRIPTIONS.get(node["role"], "")
+        provider = _pick_provider(node["provider"], header=desc)
+        if provider is None:
+            console.print("  [color(203)]Cancelled.[/]")
+            return False
         node["provider"] = provider
-        model = _pick_model(provider, node["model"])
+        model = _pick_model(provider, node["model"], header=desc)
+        if model is None:
+            console.print("  [color(203)]Cancelled.[/]")
+            return False
         node["model"] = model
+    return True
 
 
 _COLORS = {"thinker": "color(203)", "worker": "color(75)", "debugger": "color(114)"}
@@ -326,6 +360,7 @@ def _run_architecture_terminal(spec: dict, config: Config, task: str):
                             break
 
                 if next_target:
+                    time.sleep(0.5)
                     stop_anim.clear()
                     anim_thread = threading.Thread(
                         target=_animate,
@@ -377,7 +412,9 @@ def run_architect_terminal(config: Config):
     console.print("[bold color(222)]═══ Architect — Multi-Agent Pipeline ═══[/]")
     _render_terminal_graph(spec)
 
-    _configure_nodes(spec)
+    if not _configure_nodes(spec):
+        console.print("  [dim]Architect setup cancelled.[/]")
+        return
 
     # Show final config
     from rich.panel import Panel
@@ -396,7 +433,11 @@ def run_architect_terminal(config: Config):
         label.append(f"tools: {', '.join(nd['tools'])}", style="dim white")
         console.print(Panel(label, border_style=c, padding=(0, 2), box=box.ROUNDED, width=44))
 
-    task = input("\n  Task: ").strip()
+    try:
+        task = input("\n  Task: ").strip()
+    except (EOFError, KeyboardInterrupt):
+        console.print("  [color(203)]Cancelled.[/]")
+        return
     if not task:
         console.print("  [color(203)]No task given, exiting.[/]")
         return

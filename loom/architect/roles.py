@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import time
+import random
 from typing import Any, Callable
 
 from langchain_core.messages import AIMessage, SystemMessage, ToolMessage
@@ -13,6 +15,9 @@ from .schema import NodeSpec
 from .state import ArchitectState
 
 from ..ui.render import render_file_op
+
+_RATE_LIMIT_DELAY = 0.8  # seconds between model invokes
+_MAX_RETRIES = 3
 
 
 def _build_node(
@@ -77,8 +82,24 @@ def _build_node(
         max_depth = 10
         token_usage = {"input": 0, "output": 0}
 
-        for _ in range(max_depth):
-            response = model.invoke(node_messages)
+        for loop_idx in range(max_depth):
+            if loop_idx > 0:
+                time.sleep(_RATE_LIMIT_DELAY + random.uniform(0, 0.3))
+
+            # Retry on rate-limit errors with exponential backoff
+            for attempt in range(1, _MAX_RETRIES + 1):
+                try:
+                    response = model.invoke(node_messages)
+                    break
+                except Exception as exc:
+                    err = str(exc).lower()
+                    if attempt < _MAX_RETRIES and any(
+                        x in err for x in ("429", "rate limit", "too many requests", "try again")
+                    ):
+                        backoff = 1.5 ** attempt + random.uniform(0, 1)
+                        time.sleep(backoff)
+                        continue
+                    raise
             node_messages.append(response)
 
             # Accumulate token usage from response metadata

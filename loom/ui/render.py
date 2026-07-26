@@ -207,9 +207,9 @@ def render_token_usage_local(turn_in: int, turn_out: int) -> None:
     """
     t = Text("  ✦ ", style="color(147)")
     t.append("tokens")
-    t.append(f"  {_fmt_tokens(turn_in)} in", style="color(153)")
+    t.append(f"  {_fmt_tokens(turn_in)} in tokens", style="color(153)")
     t.append(" / ", style="dim")
-    t.append(f"{_fmt_tokens(turn_out)} out", style="color(222)")
+    t.append(f"{_fmt_tokens(turn_out)} out tokens", style="color(222)")
     console.print(t, highlight=False)
 
 
@@ -218,13 +218,13 @@ def render_token_usage_running(turn_in: int, turn_out: int,
     """Per-turn usage with a running session total, used by the chat REPL."""
     t = Text("  ✦ ", style="color(147)")
     t.append("this turn ", style="dim")
-    t.append(f"{_fmt_tokens(turn_in)} in", style="color(153)")
+    t.append(f"{_fmt_tokens(turn_in)} in tokens", style="color(153)")
     t.append(" / ", style="dim")
-    t.append(f"{_fmt_tokens(turn_out)} out", style="color(222)")
+    t.append(f"{_fmt_tokens(turn_out)} out tokens", style="color(222)")
     t.append("   ·   session ", style="dim")
-    t.append(f"{_fmt_tokens(total_in)} in", style="color(153)")
+    t.append(f"{_fmt_tokens(total_in)} in tokens", style="color(153)")
     t.append(" / ", style="dim")
-    t.append(f"{_fmt_tokens(total_out)} out", style="color(222)")
+    t.append(f"{_fmt_tokens(total_out)} out tokens", style="color(222)")
     console.print(t, highlight=False)
 
 
@@ -232,9 +232,9 @@ def render_session_token_footer(total_in: int, total_out: int) -> None:
     """Final goodbye shows total tokens for the chat session."""
     t = Text("  ✦ ", style="color(147)")
     t.append("session total ", style="dim")
-    t.append(f"{_fmt_tokens(total_in)} in", style="color(153)")
+    t.append(f"{_fmt_tokens(total_in)} in tokens", style="color(153)")
     t.append(" / ", style="dim")
-    t.append(f"{_fmt_tokens(total_out)} out", style="color(222)")
+    t.append(f"{_fmt_tokens(total_out)} out tokens", style="color(222)")
     console.print(t, highlight=False)
 
 

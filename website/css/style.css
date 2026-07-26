@@ -57,7 +57,7 @@ body::before {
   text-shadow: 0 0 20px var(--glow), 0 0 40px var(--glow);
   white-space: pre;
   display: inline-block;
-  width: 13ch;
+  width: 15ch;
   flex-shrink: 0;
   text-align: center;
   animation: ghostFloat 3s ease-in-out infinite, ghostFlicker 5s ease-in-out infinite;
@@ -101,7 +101,7 @@ body::before {
   white-space: pre;
   display: inline-block;
   text-align: center;
-  margin: 1rem 0;
+  margin: 0;
 }
 
 .loom-ascii .l { color: var(--primary); }
@@ -552,26 +552,27 @@ footer a:hover { color: var(--primary2); }
     flex-direction: column;
     gap: 1rem;
     align-items: center;
+    justify-content: center;
   }
   .ghost {
-    width: auto;
-    max-width: 90%;
-    margin: 0 auto;
+    margin: 0;
   }
 }
 
 @media (max-width: 480px) {
   .ghost {
     font-size: 0.75rem;
-    width: 100%;
-    max-width: 100%;
+    margin: 0;
   }
   .loom-ascii {
     font-size: 0.45rem;
+    align-self: center;
   }
   .hero-left > div:first-child {
     flex-direction: column;
     gap: .75rem;
+    align-items: center;
+    justify-content: center;
   }
 }
 

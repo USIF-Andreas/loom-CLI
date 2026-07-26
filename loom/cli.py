@@ -397,6 +397,7 @@ def _cmd_sessions() -> None:
 def _architect_terminal(config: Config) -> None:
     from .architect.server import run_architect_terminal
     run_architect_terminal(config)
+    render.render_text("system", "Architect finished. Run 'loom chat' to return to normal chat.")
 
 
 
@@ -671,7 +672,7 @@ def chat(
                 ctx["plan_mode"] = False
                 render.render_text("system", "Planning mode disabled for this turn.")
         try:
-            render.render_role("system", "working...")
+            render.render_role(config.model, "working...")
             new_history = run_agent_streaming(
                 prompt=user_input,
                 config=config,
